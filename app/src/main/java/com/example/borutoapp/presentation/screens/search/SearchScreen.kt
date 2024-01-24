@@ -17,7 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.borutoapp.presentation.common.EmptyScreen
 import com.example.borutoapp.presentation.common.ListContent
+import com.example.borutoapp.presentation.common.handlePagingResult
 import com.example.borutoapp.ui.theme.SEARCH_TOP_BAR_HEIGHT
 
 @Composable
@@ -46,14 +48,20 @@ fun SearchScreen(
                 })
         },
         content = {
-            Column {
-                Spacer(modifier = Modifier
-                    .height(SEARCH_TOP_BAR_HEIGHT)
-                    .padding(it))
-                ListContent(
-                    heroes = heroes,
-                    navController = navController
-                )
+            if (heroes.itemCount<1){
+                EmptyScreen()
+            } else {
+                Column {
+                    Spacer(
+                        modifier = Modifier
+                            .height(SEARCH_TOP_BAR_HEIGHT)
+                            .padding(it)
+                    )
+                    ListContent(
+                        heroes = heroes,
+                        navController = navController
+                    )
+                }
             }
         }
     )
