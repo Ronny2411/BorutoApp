@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.borutoapp.navigation.Screen
 import com.example.borutoapp.presentation.common.ListContent
 import com.example.borutoapp.ui.theme.DarkGrey
 import com.gowtham.ratingbar.RatingBar
@@ -23,7 +24,7 @@ fun HomeScreen(
 
     Scaffold(
         topBar = { HomeTopBar {
-
+            navController.navigate(Screen.Search.route)
         }},
         backgroundColor = if (isSystemInDarkTheme()) DarkGrey else Color.White
     ) {

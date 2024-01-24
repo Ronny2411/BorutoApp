@@ -5,6 +5,7 @@ import com.example.borutoapp.domain.model.Hero
 import com.example.borutoapp.domain.repository.DataStoreOperations
 import com.example.borutoapp.domain.repository.RemoteDataSource
 import kotlinx.coroutines.flow.Flow
+import retrofit2.http.Query
 import javax.inject.Inject
 
 class Repository @Inject constructor(
@@ -16,6 +17,9 @@ class Repository @Inject constructor(
         return remote.getAllHeroes()
     }
 
+    fun searchHeroes(query: String): Flow<PagingData<Hero>>{
+        return remote.searchHeroes(query = query)
+    }
     suspend fun saveOnBoardingState(completed: Boolean){
         dataStore.saveOnBoardingState(completed = completed)
     }
