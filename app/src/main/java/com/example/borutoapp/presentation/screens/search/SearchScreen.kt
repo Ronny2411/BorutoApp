@@ -48,20 +48,16 @@ fun SearchScreen(
                 })
         },
         content = {
-            if (heroes.itemCount<1){
-                EmptyScreen()
-            } else {
-                Column {
-                    Spacer(
-                        modifier = Modifier
-                            .height(SEARCH_TOP_BAR_HEIGHT)
-                            .padding(it)
-                    )
-                    ListContent(
-                        heroes = heroes,
-                        navController = navController
-                    )
-                }
+            Column {
+                Spacer(
+                    modifier = Modifier
+                        .height(SEARCH_TOP_BAR_HEIGHT)
+                        .padding(it)
+                )
+                ListContent(
+                    heroes = heroes,
+                    navController = navController
+                )
             }
         }
     )
