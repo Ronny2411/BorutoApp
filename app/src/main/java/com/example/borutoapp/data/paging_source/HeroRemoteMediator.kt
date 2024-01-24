@@ -18,12 +18,12 @@ class HeroRemoteMediator @Inject constructor(
 ) : RemoteMediator<Int,Hero>() {
 
     private val heroDao = borutoDatabase.heroDao()
-    private val heroRemoteKeys = borutoDatabase.heroRemoteKeysDao()
+    private val heroRemoteKeysDao = borutoDatabase.heroRemoteKeysDao()
 
     private suspend fun getRemoteKeyClosestToCurrentPosition(state: PagingState<Int, Hero>): HeroRemoteKeys? {
         return state.anchorPosition?.let {position->
             state.closestItemToPosition(position)?.id?.let {id->
-                heroRemoteKeys.getRemoteKeys(id)
+                heroRemoteKeysDao.getRemoteKeys(id)
             }
         }
     }
@@ -31,15 +31,28 @@ class HeroRemoteMediator @Inject constructor(
     private suspend fun getRemoteKeyForFirstItem(state: PagingState<Int, Hero>): HeroRemoteKeys? {
         return state.pages.firstOrNull {it.data.isNotEmpty()}?.data?.firstOrNull()
             ?.let {hero->
-                heroRemoteKeys.getRemoteKeys(hero.id)
+                heroRemoteKeysDao.getRemoteKeys(hero.id)
             }
     }
 
     private suspend fun getRemoteKeyForLastItem(state: PagingState<Int, Hero>): HeroRemoteKeys? {
         return state.pages.lastOrNull() {it.data.isNotEmpty()}?.data?.lastOrNull()
             ?.let {hero->
-                heroRemoteKeys.getRemoteKeys(hero.id)
+                heroRemoteKeysDao.getRemoteKeys(hero.id)
             }
+    }
+
+    override suspend fun initialize(): InitializeAction {
+        val currentTime = System.currentTimeMillis()
+        val lastUpdated = heroRemoteKeysDao.getRemoteKeys(1)?.lastUpdated ?: 0L
+        val cacheTimeout = 1440
+
+        val diffInMinutes = (currentTime - lastUpdated) / 1000 / 60
+        return if (diffInMinutes.toInt() <= cacheTimeout){
+            InitializeAction.SKIP_INITIAL_REFRESH
+        } else {
+            InitializeAction.LAUNCH_INITIAL_REFRESH
+        }
     }
 
     override suspend fun load(loadType: LoadType, state: PagingState<Int, Hero>): MediatorResult {
@@ -71,7 +84,7 @@ class HeroRemoteMediator @Inject constructor(
                 borutoDatabase.withTransaction {
                     if (loadType == LoadType.REFRESH){
                         heroDao.deleteAllHeroes()
-                        heroRemoteKeys.deleteAllRemoteKeys()
+                        heroRemoteKeysDao.deleteAllRemoteKeys()
                     }
                     val prevPage = response.prevPage
                     val nextPage = response.nextPage
@@ -79,10 +92,11 @@ class HeroRemoteMediator @Inject constructor(
                         HeroRemoteKeys(
                             id = hero.id,
                             prevPage = prevPage,
-                            nextPage = nextPage
+                            nextPage = nextPage,
+                            lastUpdated = response.lastUpdated
                         )
                     }
-                    heroRemoteKeys.addAllRemoteKeys(keys)
+                    heroRemoteKeysDao.addAllRemoteKeys(keys)
                     heroDao.addHeroes(response.heroes)
                 }
             }
