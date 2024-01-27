@@ -97,7 +97,7 @@ fun handlePagingResult(
                 false
             }
             error != null -> {
-                EmptyScreen(error)
+                EmptyScreen(error = error, heroes = heroes)
                 false
             }
             else -> true
