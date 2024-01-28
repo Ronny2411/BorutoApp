@@ -1,9 +1,11 @@
 package com.example.borutoapp.presentation.screens.details
 
+import android.app.Activity
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,19 +28,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.rememberBottomSheetState
 import androidx.compose.material.rememberBottomSheetScaffoldState
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import com.example.borutoapp.R
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
@@ -51,49 +63,109 @@ import com.example.borutoapp.ui.theme.INFO_ICON_SIZE
 import com.example.borutoapp.ui.theme.LARGE_PADDING
 import com.example.borutoapp.ui.theme.MEDIUM_PADDING
 import com.example.borutoapp.ui.theme.MIN_SHEET_HEIGHT
+import com.example.borutoapp.ui.theme.Purple40
 import com.example.borutoapp.ui.theme.SMALL_PADDING
 import com.example.borutoapp.ui.theme.titleColor
 import com.example.borutoapp.util.Constants.ABOUT_TEXT_MAX_LINES
 import com.example.borutoapp.util.Constants.BASE_URL
 import com.example.borutoapp.util.Constants.MIN_BACKGROUND_IMAGE_HEIGHT
+import com.example.borutoapp.util.PaletteGenerator.convertImageUrlToBitmap
+import com.example.borutoapp.util.PaletteGenerator.extractColorsFromBitmap
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DetailsScreen(
     navController: NavHostController,
     detailsViewModel: DetailsViewModel = hiltViewModel()) {
-
+    val activity = LocalContext.current as Activity
     val selectedHero by detailsViewModel.selectedHero.collectAsState()
-    
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Expanded)
-    )
+    val colorPalette by detailsViewModel.colorPalette
 
-    val currentSheetFraction = scaffoldState.currentSheetFraction
 
-    val radiusAnim by animateDpAsState(
-        targetValue = if (currentSheetFraction == 1f)
-            EXTRA_LARGE_PADDING
-        else
-            EXPANDED_RADIUS_LEVEL, label = ""
-    )
+    if (colorPalette.isNotEmpty()){
+        var vibrant by remember {
+            mutableStateOf("#000000")
+        }
+        var darkVibrant by remember {
+            mutableStateOf("#000000")
+        }
+        var onDarkVibrant by remember {
+            mutableStateOf("#FFFFFF")
+        }
+        LaunchedEffect(key1 = selectedHero){
+            vibrant = colorPalette["vibrant"].toString()
+            darkVibrant = colorPalette["darkVibrant"].toString()
+            onDarkVibrant = colorPalette["onDarkVibrant"].toString()
 
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = MIN_SHEET_HEIGHT,
-        sheetShape = RoundedCornerShape(topStart = radiusAnim, topEnd = radiusAnim),
-        sheetContent = {
-            selectedHero?.let {
-                BottomSheetContent(selectedHero = it)
+        }
+        val darkTheme: Boolean = isSystemInDarkTheme()
+        val view = LocalView.current
+        SideEffect {
+            activity.window.statusBarColor = Color(darkVibrant.hashCode()).toArgb()
+            activity.window.navigationBarColor = Color(darkVibrant.hashCode()).toArgb()
+            WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+
+        val scaffoldState = rememberBottomSheetScaffoldState(
+            bottomSheetState = rememberBottomSheetState(initialValue = BottomSheetValue.Expanded)
+        )
+
+        val currentSheetFraction = scaffoldState.currentSheetFraction
+
+        val radiusAnim by animateDpAsState(
+            targetValue = if (currentSheetFraction == 1f)
+                EXTRA_LARGE_PADDING
+            else
+                EXPANDED_RADIUS_LEVEL, label = ""
+        )
+
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = MIN_SHEET_HEIGHT,
+            sheetShape = RoundedCornerShape(topStart = radiusAnim, topEnd = radiusAnim),
+            sheetContent = {
+                selectedHero?.let {
+                    BottomSheetContent(
+                        selectedHero = it,
+                        infoBoxIconColor = Color(vibrant.hashCode()),
+                        sheetBackgroundColor = Color(darkVibrant.hashCode()),
+                        contentColor = Color(onDarkVibrant.hashCode())
+                    )
+                }
+            }) {
+            selectedHero?.let {hero->
+                BackgroundContent(heroImage = hero.image,
+                    imageFraction = currentSheetFraction+MIN_BACKGROUND_IMAGE_HEIGHT,
+                    backgroundColor = Color(darkVibrant.hashCode())
+                ) {
+                    navController.popBackStack()
+                }
             }
-        }) {
-        selectedHero?.let {hero->
-            BackgroundContent(heroImage = hero.image,
-                imageFraction = currentSheetFraction+MIN_BACKGROUND_IMAGE_HEIGHT) {
-                navController.popBackStack()
+        }
+    } else {
+        detailsViewModel.generateColorPalette()
+    }
+
+    val context = LocalContext.current
+    LaunchedEffect(key1 = true){
+        detailsViewModel.uiEvent.collectLatest {event->
+            when (event){
+                is UiEvent.GenerateColorPalette-> {
+                    val bitmap = convertImageUrlToBitmap(
+                        imageUrl = "$BASE_URL${selectedHero?.image}",
+                        context = context
+                    )
+                    if (bitmap!=null){
+                        detailsViewModel.setColorPalette(
+                            colors = extractColorsFromBitmap(bitmap = bitmap)
+                        )
+                    }
+                }
             }
         }
     }
+
 }
 
 @Composable
@@ -209,6 +281,7 @@ fun BackgroundContent(
         Row(modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End) {
             Icon(imageVector = Icons.Default.Close,
+                tint = Color.White,
                 contentDescription = stringResource(R.string.close),
                 modifier = Modifier
                     .padding(SMALL_PADDING)
@@ -244,7 +317,8 @@ val BottomSheetScaffoldState.currentSheetFraction: Float
 @Preview
 @Composable
 fun BottomSheetContentPrev() {
-    BottomSheetContent(selectedHero =
+    BottomSheetContent(
+        selectedHero =
     Hero(
         id = 1,
         name = "Sasuke",

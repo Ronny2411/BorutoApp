@@ -1,5 +1,6 @@
 package com.example.borutoapp.presentation.screens.welcome
 
+import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -25,15 +26,19 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.borutoapp.R
@@ -55,6 +60,22 @@ import com.example.borutoapp.util.Constants.ON_BOARDING_PAGE_COUNT
 @Composable
 fun WelcomeScreen(navController: NavHostController,
                   welcomeViewModel: WelcomeViewModel = hiltViewModel()){
+    val darkTheme: Boolean = isSystemInDarkTheme()
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            if (darkTheme) {
+                window.statusBarColor = Color.Black.toArgb()
+                window.navigationBarColor = Color.Black.toArgb()
+            }
+            else{
+                window.statusBarColor = Purple40.toArgb()
+                window.navigationBarColor = Purple40.toArgb()
+            }
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+    }
     val pages = listOf(
         OnBoardingPage.First,
         OnBoardingPage.Second,

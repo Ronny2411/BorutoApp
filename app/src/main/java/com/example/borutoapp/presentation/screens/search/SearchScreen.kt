@@ -1,5 +1,6 @@
 package com.example.borutoapp.presentation.screens.search
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -9,14 +10,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -27,6 +32,7 @@ import com.example.borutoapp.presentation.common.EmptyScreen
 import com.example.borutoapp.presentation.common.ListContent
 import com.example.borutoapp.presentation.common.handlePagingResult
 import com.example.borutoapp.ui.theme.DarkGrey
+import com.example.borutoapp.ui.theme.Purple40
 import com.example.borutoapp.ui.theme.SEARCH_TOP_BAR_HEIGHT
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -34,7 +40,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 fun SearchScreen(
     searchViewModel: SearchViewModel = hiltViewModel(),
     navController: NavHostController) {
-
+    val darkTheme: Boolean = isSystemInDarkTheme()
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            if (darkTheme) {
+                window.statusBarColor = Color.Black.toArgb()
+                window.navigationBarColor = Color.Black.toArgb()
+            }
+            else{
+                window.statusBarColor = Purple40.toArgb()
+                window.navigationBarColor = Purple40.toArgb()
+            }
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+    }
     val focusManager = LocalFocusManager.current
 
     var searchQuery by searchViewModel.searchQuery

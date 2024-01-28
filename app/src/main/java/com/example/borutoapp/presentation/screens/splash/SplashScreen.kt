@@ -1,5 +1,6 @@
 package com.example.borutoapp.presentation.screens.splash
 
+import android.app.Activity
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.core.tween
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -18,9 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.borutoapp.R
@@ -34,7 +39,22 @@ import com.example.borutoapp.ui.theme.PurpleGrey40
 @Composable
 fun SplashScreen(navController: NavHostController,
                  splashViewModel: SplashViewModel = hiltViewModel()){
-
+    val darkTheme: Boolean = isSystemInDarkTheme()
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            if (darkTheme) {
+                window.statusBarColor = Color.Black.toArgb()
+                window.navigationBarColor = Color.Black.toArgb()
+            }
+            else{
+                window.statusBarColor = Purple40.toArgb()
+                window.navigationBarColor = Purple40.toArgb()
+            }
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+    }
     val degrees = remember {
         androidx.compose.animation.core.Animatable(0f)
     }
